@@ -1,5 +1,5 @@
 "use strict"
-
+import randomColor from 'randomcolor'
 import { canvas, Core, halfCanvasHeight, halfCanvasWidth, scale } from './core'
 const { drawRect, drawImage, drawText, drawCircle, drawNet, sleep, drawBlock } = Core;
 
@@ -10,10 +10,13 @@ export default class Play {
 
     CIRCLE_RADIUS = 10;
     CIRCLE_DIAMETER = this.CIRCLE_RADIUS * 2
+    BLOCK_MARGIN = 2
+
     framesPerSecond = 60;
     lastCoordinateX = 0;
     
     end = false
+    blocked = false
     circles = []
     cols = []
     points = []
@@ -29,8 +32,20 @@ export default class Play {
 
         drawRect(0, 0, canvas.width, canvas.height, 'black')
 
-        //drawBlock(10, 0, 500, 'red')
+        for(const block of this.blocks) {
+            drawBlock(block.x, block.y, block.size, block.color)
 
+            drawText(
+                block.x + (block.size / 2) - 10, 
+                block.y + (block.size / 2) + 10,
+                22 * scale, 
+                'white', 
+                'Montserrat-Regular', 
+                block.value
+            )
+        }
+
+        // Falling points
         for(var i = 0; i < this.points.length; i++) {
             drawCircle(
                 this.points[i].x, 
@@ -47,6 +62,7 @@ export default class Play {
                  this.points[i].value)
         }
 
+        // Current player available points
         drawText(
             this.availableCircle.x, 
             this.availableCircle.y,
@@ -55,7 +71,7 @@ export default class Play {
              'Montserrat-Regular', 
              this.availableCircle.value)
 
-
+        // Current player available points line
         for(var i = 0; i < this.circles.length; i++) {
             drawCircle(
                 this.circles[i].x, 
@@ -66,7 +82,81 @@ export default class Play {
         }
     }
 
+    addBlocks() {
+
+        if(this.blocked) {
+            return false
+        }
+
+        const margin = ( this.BLOCK_MARGIN * scale )
+        const blockSize = (canvas.width / 5)
+
+        for(let i = 0; i < 5; i++) {
+
+            let x;
+
+            if(i === 0) {
+                x = margin
+            } else {
+                x = margin + (blockSize * i)
+            }
+
+            this.blocks.push({
+                x: x,
+                y: -(blockSize),
+                size: blockSize - (margin * 2),
+                value: Math.floor(Math.random() * this.availableCircle.value - 1) + 1,
+                color: randomColor()
+            })
+        }
+
+    }
+
+    updateBlocks() {
+
+        this.blocks = this.blocks.reduce((previous, block) => {
+
+            // Remove the block from the array when outside of canvas
+            if(block.y > canvas.height) {
+                return previous
+            }
+
+            const blockBottomPosition = block.y + block.size
+            const blockMargin = this.BLOCK_MARGIN * scale
+            const playerX = this.circles[0].x;
+
+            // Colision
+            if(blockBottomPosition >= (this.circles[0].y - (this.CIRCLE_DIAMETER + 1)) 
+            && blockBottomPosition <= (this.circles[0].y + this.CIRCLE_DIAMETER))
+            {
+                if(playerX >= (block.x - blockMargin) || playerX <= ((blockMargin - block.x) + (block.size + blockMargin))) {
+                    this.blocked = true
+                    return previous.concat([block])
+                } else {
+                    return previous.concat([block])
+                }
+            }
+
+            if(!this.blocked) {
+                
+                let { y , ...props } = block
+
+                return previous.concat([{
+                    y: y += 10,
+                    ...props
+                }])
+            } else {
+                return previous.concat([block])
+            }
+
+        }, []);
+    }
+
     addPoints() {
+
+        if(this.blocked) {
+            return false
+        }
 
         const numberOfPoints = Math.floor(Math.random() * 4) + 1
 
@@ -80,6 +170,10 @@ export default class Play {
     }
 
     updatePoints() {
+
+        if(this.blocked) {
+            return false
+        }
 
         this.points = this.points.reduce((previous, point) => {
 
@@ -102,11 +196,17 @@ export default class Play {
     
                     return previous
                 } else {
-                    return previous.concat([{
-                        x: point.x,
-                        y: point.y + 10,
-                        value: point.value
-                    }])
+
+                    if(!this.blocked) {
+
+                        let { y, ...props } = point;
+
+                        return previous.concat([{
+                            y: y + 10,
+                            ...props
+                        }])
+                    } 
+                    return previous
                 }
             }
             return previous
@@ -130,6 +230,7 @@ export default class Play {
         canvas.addEventListener("touchmove", this.handleTouch, false);
 
         this._play_animation = setInterval(() => {
+            this.updateBlocks()
             this.updatePoints()
             this.draw()
         }, 1000 / this.framesPerSecond)
@@ -139,6 +240,9 @@ export default class Play {
             setInterval(() => {
                 this.addPoints()
             }, 1500)
+            setInterval(() => {
+                this.addBlocks()
+            }, 2000)
         }, 1000)
 
     }
@@ -156,7 +260,7 @@ export default class Play {
         }
 
         // Check the distance
-        const distance = Math.abs(this.lastCoordinateX - touch.pageX)
+        const distance = Math.abs(this.lastCoordinateX - touch.pageX) * scale
 
         // Swipe left
         if(this.lastCoordinateX > touch.pageX) {
@@ -170,9 +274,7 @@ export default class Play {
 
             this.circles.map((circle, key) => {
                 if(key !== 0) {
-                    setTimeout(() => {
-                        circle.x -= distance
-                    }, 40 * (key/1.5));
+                    circle.x -= distance
                 }
             })
         } else {
@@ -187,10 +289,7 @@ export default class Play {
 
             this.circles.map((circle, key) => {
                 if(key !== 0) {
-
-                    setTimeout(() => {
-                        circle.x += distance
-                    }, 40 * (key/1.5));
+                    circle.x += distance
                 }
             })
         }
@@ -200,7 +299,7 @@ export default class Play {
 
 
     /**
-     * When the game was started
+     * Deploying first coins animation
      */
     async startAnimation() {
         return new Promise((resolve, reject) => {

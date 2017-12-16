@@ -16,6 +16,8 @@ const assetsPath = [
 
 const cacheImage = []
 
+const BLOCK_RADIUS = 20
+
 export class Core {
 
     constructor(canvasElm) {
@@ -121,31 +123,32 @@ export class Core {
      * Draw block
      * @param {number} x 
      * @param {number} y 
-     * @param {number} w 
+     * @param {number} size 
      * @param {string} color 
      */
-    static drawBlock(x,y, w, color) {
-       
-        context.beginPath();
-        context.lineWidth="5";
+    static drawBlock(x,y, size, color) {
+
+        const blockRadius = BLOCK_RADIUS * scale
+
+        context.fillStyle = 'black'
+        context.fillRect(x, y, size, size);
         context.strokeStyle = color;
-        context.moveTo(x + 10, x);
-        context.lineTo(w, 10);
-        context.quadraticCurveTo(w + 10, 10, w + 10, 20);
+        context.lineJoin = "round";
+        context.lineWidth = blockRadius;
 
-        context.lineTo(w + 10, w);
-        context.quadraticCurveTo(w + 10, w + 10, w, w + 10);
-        
-        context.lineTo(20, w + 10);
-        context.quadraticCurveTo(10, w + 10, 10, w);
-        context.lineTo(10, 20);
-
-        context.quadraticCurveTo(x, 10, 20, 10);
+        context.strokeRect(
+            x + (blockRadius/2), 
+            y + (blockRadius/2), 
+            size - blockRadius, 
+            size - blockRadius
+        );
         context.fillStyle = color;
-        context.stroke();
-
-        context.fillStyle = color;
-        context.fillRect(x + 2, y + 12, w - 3, w - 3)
+        context.fillRect(
+            x + (blockRadius/2), 
+            y + (blockRadius/2), 
+            size - blockRadius, 
+            size - blockRadius
+        );
     }
 
     /**
