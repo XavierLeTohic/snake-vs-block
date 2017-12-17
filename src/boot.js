@@ -127,11 +127,11 @@ export default class Boot {
         )
 
         drawText(
-            halfCanvasWidth - (3*scale), 
+            halfCanvasWidth - (4*scale), 
             (halfCanvasHeight + canvas.height/6) - (20*scale),
              14 * scale, 
              'white', 
-             'Montserrat-Thin', 
+             'Montserrat-Regular', 
              '4')
 
         drawCircle(

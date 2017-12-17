@@ -17,6 +17,7 @@ export default class Play {
 
     score = 0
     end = false
+    pause = false
     newBestScore = false
     bestScore = 0
     blocked = false
@@ -25,6 +26,8 @@ export default class Play {
     points = []
     blocks = []
     hitBlock = null
+    restartOpacity = 0
+    reverseOpacity = false
 
     availableCircle = {
         x: 0,
@@ -42,15 +45,14 @@ export default class Play {
                 drawBlock(block.x, block.y, block.size, block.color)
 
                 drawText(
-                    block.x + (block.size / 2) - (this.value > 9 ? 20 : 12),
-                    block.y + (block.size / 2) + 15,
+                    block.x + (block.size / 2) - (this.value > 9 ? (10 * scale) : (6 * scale)),
+                    block.y + (block.size / 2) + (7 * scale),
                     22 * scale,
                     'white',
                     'Montserrat-Regular',
                     block.value
                 )
             }
-
         }
 
         // Falling points
@@ -64,8 +66,8 @@ export default class Play {
             )
 
             drawText(
-                point.x - 8,
-                point.y - 30,
+                point.x - (4 * scale),
+                point.y - (20 * scale),
                 14 * scale,
                 'white',
                 'Montserrat-Regular',
@@ -85,7 +87,7 @@ export default class Play {
 
             // Score
             drawText(
-                halfCanvasWidth - (this.score > 9 ? 60 : 30),
+                halfCanvasWidth - (this.score > 9 ? (25 * scale) : (15 * scale)),
                 halfCanvasHeight / 2,
                 45 * scale,
                 'black',
@@ -96,8 +98,8 @@ export default class Play {
             if(this.newBestScore) {
                 // New best score label
                 drawText(
-                    halfCanvasWidth - 110,
-                    halfCanvasHeight - 140,
+                    halfCanvasWidth - (halfCanvasWidth / 3),
+                    (halfCanvasHeight / 2) + (halfCanvasHeight / 8),
                     14 * scale,
                     'black',
                     'Montserrat-Thin',
@@ -106,24 +108,34 @@ export default class Play {
             } else {
                 // New best score label
                 drawText(
-                    halfCanvasWidth - 70,
-                    halfCanvasHeight - 140,
+                    halfCanvasWidth - (halfCanvasWidth / 6),
+                    (halfCanvasHeight / 2) + (halfCanvasHeight / 8),
                     14 * scale,
                     'black',
                     'Montserrat-Thin',
                     `Best score :`
                 )
 
-                // Best score
+                // Best score value
                 drawText(
-                    halfCanvasWidth - 20,
-                    halfCanvasHeight - 80,
+                    halfCanvasWidth - (this.bestScore > 9 ? (10 * scale) : (5 * scale)),
+                    (halfCanvasHeight / 2) + (halfCanvasHeight / 4.5),
                     22 * scale,
                     'black',
                     'Montserrat-Regular',
                     this.bestScore
                 )
             }
+
+            // Continue label
+            drawText(
+                halfCanvasWidth - (75 * scale), 
+                halfCanvasHeight + (canvas.height/3), 
+                22 * scale, 
+                `rgba(255, 255, 255, ${this.restartOpacity.toFixed(2)})`, 
+                'Montserrat-Thin', 
+                'Tap to continue'
+            );
 
 
         } else {
@@ -152,7 +164,7 @@ export default class Play {
 
     addBlocks() {
 
-        if (this.blocked || this.end) {
+        if (this.blocked || this.end || this.pause) {
             return false
         }
 
@@ -182,7 +194,7 @@ export default class Play {
 
     updateBlocks() {
 
-        if(this.end) {
+        if(this.end || this.pause) {
             return false
         }
 
@@ -232,7 +244,7 @@ export default class Play {
                 let { y, ...props } = block
 
                 return previous.concat([{
-                    y: y += 13,
+                    y: y += (6.5 * scale),
                     ...props
                 }])
 
@@ -246,15 +258,18 @@ export default class Play {
             this.hitBlock.value -= 1
             this.availableCircle.value -= 1
 
-            if(this.availableCircle.value === 0) {
+            if(this.availableCircle.value === 0 && !this.end) {
+                canvas.removeEventListener("touchmove", this.handleTouch);
                 this.end = true
+
                 if(this.score > this.bestScore) {
                     this.newBestScore = true
                     this.bestScore = this.score
                     localStorage.setItem('bestScore', this.score)
                 }
-                console.log(this.bestScore)
 
+                this._restart_animation = setInterval(this.restartAnimation, 20);
+                canvas.addEventListener("touchstart", this.handleTouch)
             }
 
             this.circles.pop()
@@ -264,7 +279,7 @@ export default class Play {
 
     addPoints() {
 
-        if (this.blocked || this.end) {
+        if (this.blocked || this.end || this.pause) {
             return false
         }
 
@@ -273,7 +288,7 @@ export default class Play {
         for (var i = 0; i < numberOfPoints; i++) {
             this.points.push({
                 x: this.cols[i],
-                y: - 40,
+                y: -40,
                 value: Math.floor(Math.random() * 5) + 1
             })
         }
@@ -281,7 +296,7 @@ export default class Play {
 
     updatePoints() {
 
-        if (this.blocked || this.end) {
+        if (this.blocked || this.end || this.pause) {
             return false
         }
 
@@ -299,7 +314,7 @@ export default class Play {
                     for (let i = 0; i < point.value; i++) {
                         this.circles.push({
                             x: this.circles[this.circles.length - 1].x,
-                            y: this.circles[this.circles.length - 1].y + 40
+                            y: this.circles[this.circles.length - 1].y + (20 * scale)
                         })
                     }
 
@@ -314,7 +329,7 @@ export default class Play {
                         let { y, ...props } = point;
 
                         return previous.concat([{
-                            y: y + 13,
+                            y: y + (6.5 * scale),
                             ...props
                         }])
                     }
@@ -325,42 +340,12 @@ export default class Play {
         }, [])
     }
 
-    /**
-     * Called after the start animation
-     */
-    startGame() {
-
-        const oneColWith = halfCanvasWidth / 2;
-        
-        for(let i = 1; i <= 5; i++) {
-            this.cols.push(oneColWith * i)
+    onTabFocusOff = () => {
+        if(document.visibilityState === 'hidden') {
+            this.pause = true;
+        } else {
+            this.pause = false;
         }
-
-        canvas.addEventListener("touchmove", this.handleTouch, false);
-
-        this._play_animation = setInterval(() => {
-
-            if (this.availableCircle.value > 0) {
-                this.updateBlocks()
-                this.updatePoints()
-                this.draw()
-            } else {
-                this.draw()
-            }
-
-        }, 1000 / this.framesPerSecond)
-
-        this.addPoints()
-
-        setInterval(() => {
-            this.addPoints()
-            this.addBlocks()
-        }, 1500)
-        setInterval(() => {
-            if (this.blocked) {
-                this.handleBlockCollision()
-            }
-        }, 100)
     }
 
     /**
@@ -370,7 +355,17 @@ export default class Play {
         const touch = changedTouches[0];
 
         if(this.end) {
-            return false;
+
+            // Remove all listeners and interval before showing the start screen
+            clearInterval(this._restart_animation);
+            clearInterval(this._play_animation);
+            clearInterval(this._start_animation);
+            clearInterval(this._add_elements_animation);
+            clearInterval(this._block_collision_animation);
+            canvas.removeEventListener("touchstart", this.handleTouch)
+            document.removeEventListener("visibilitychange", this.onTabFocusOff)
+
+            return this.showStartScreen(this.run.bind(this))
         }
 
         // First touch
@@ -419,6 +414,22 @@ export default class Play {
         this.lastCoordinateX = touch.pageX
     }
 
+    restartAnimation = () => {
+            
+        const opacity = parseFloat(this.restartOpacity.toFixed(2));
+
+        if(opacity <= 1 && !this.reverseOpacity) {
+            this.restartOpacity += 0.04
+            if(opacity === 1) {
+                this.reverseOpacity = !this.reverseOpacity
+            }
+        } else if(opacity >= 0 && this.reverseOpacity) {
+            this.restartOpacity -= 0.04
+            if(opacity === 0) {
+                this.reverseOpacity = !this.reverseOpacity
+            }
+        }
+    }
 
     /**
      * Deploying first coins animation
@@ -447,13 +458,67 @@ export default class Play {
         })
     }
 
+        /**
+     * Called after the start animation
+     */
+    startGame() {
+
+        const oneColWith = halfCanvasWidth / 2;
+        
+        for(let i = 1; i <= 5; i++) {
+            this.cols.push(oneColWith * i)
+        }
+
+        canvas.addEventListener("touchmove", this.handleTouch, false);
+        document.addEventListener("visibilitychange", this.onTabFocusOff);
+
+        this._play_animation = setInterval(() => {
+
+            if (this.availableCircle.value > 0) {
+                this.updateBlocks()
+                this.updatePoints()
+                this.draw()
+            } else {
+                this.draw()
+            }
+
+        }, 1000 / this.framesPerSecond)
+
+        this.addPoints()
+
+        this._add_elements_animation = setInterval(() => {
+            this.addPoints()
+            this.addBlocks()
+        }, 1500)
+
+        this._block_collision_animation = setInterval(() => {
+            if (this.blocked) {
+                this.handleBlockCollision()
+            }
+        }, 100)
+    }
+
     /**
      * Run the game
      */
-    async run() {
+    async run(showStartScreen) {
 
+        this.showStartScreen = showStartScreen
+
+        // Reset values
         this.availableCircle.x = halfCanvasWidth - (3 * scale);
         this.availableCircle.y = (halfCanvasHeight + (canvas.height / 6)) - 20;
+        this.availableCircle.value = 4;
+        this.restartOpacity = 0;
+        this.reverseOpacity = false;
+        this.blocks = [];
+        this.points = [];
+        this.circles = [];
+        this.cols = [];
+        this.pause = false;
+        this.blocked = false;
+        this.hitBlock = null;
+        this.end = false;
 
         const defaultX = halfCanvasWidth;
         const defaultY = halfCanvasHeight + (canvas.height / 6);
@@ -467,10 +532,8 @@ export default class Play {
         } else {
             this.bestScore = 0;
         }
-        
 
         this.draw()
-
         await this.startAnimation()
         this.startGame()
     }

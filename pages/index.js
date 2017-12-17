@@ -17,6 +17,9 @@ export default class extends Component {
             <div className="gameContainer">
                 <Head>
                     <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+                    <meta name="apple-mobile-web-app-capable" content="yes" />
+                    <meta name="mobile-web-app-capable" content="yes" />
+                    <link rel="manifest" href="/manifest.json" />
                     <link rel="preload" href="/static/fonts/Montserrat-Light.ttf" as="font" />
                     <link rel="preload" href="/static/fonts/Montserrat-Thin.ttf" as="font" />
                 </Head>

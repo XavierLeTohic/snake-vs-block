@@ -12,6 +12,7 @@ export default class Start {
     startInstructionOpacity = 0;
     reverseOpacity = false;
     useTouch = false;
+    bestScore = 0;
 
     LIGHT_FONT_SIZE = 33
     BOLD_FONT_SIZE = 48
@@ -30,20 +31,42 @@ export default class Start {
             'Montserrat-Thin', 
             'Snake'
         )
-        drawText(halfCanvasWidth - (35*scale), 
+        drawText(
+            halfCanvasWidth - (35*scale), 
             halfCanvasHeight - (canvas.height/4), 
             this.BOLD_FONT_SIZE * scale, 
             'white', 
             'Montserrat-Regular', 
             'VS'
         )
-        drawText(halfCanvasWidth - (45*scale), 
+        drawText(
+            halfCanvasWidth - (45*scale), 
             halfCanvasHeight + (45 * scale) - (canvas.height/4), 
             this.LIGHT_FONT_SIZE * scale, 
             'white', 
             'Montserrat-Thin', 
             'Block'
         )
+
+        if(this.bestScore > 0) {
+            drawText(
+                halfCanvasWidth - (40 * scale), 
+                halfCanvasHeight - (halfCanvasHeight / 7), 
+                16 * scale, 
+                'white', 
+                'Montserrat-Thin', 
+                'Best score :'
+            )
+
+            drawText(
+                halfCanvasWidth - ((this.bestScore > 9 ? 15 : 10) * scale), 
+                halfCanvasHeight, 
+                this.LIGHT_FONT_SIZE * scale, 
+                'white', 
+                'Montserrat-Regular', 
+                this.bestScore
+            )
+        }
 
         // Start instruction text
         drawText(
@@ -81,6 +104,10 @@ export default class Start {
 
         canvas.addEventListener("touchstart", this.onTouch)
         canvas.addEventListener("mousedown", this.onTouch)
+
+        if(localStorage.key('bestScore') !== null) {
+            this.bestScore = localStorage.getItem('bestScore')
+        }
 
         // Start instruction text blinking
         this.instructionAnimation = setInterval(() => {
@@ -120,6 +147,6 @@ export default class Start {
         canvas.removeEventListener("touchstart", this.onTouch)
         canvas.removeEventListener("mousedown", this.onTouch)
 
-        this.runGame()
+        this.runGame(this.show.bind(this))
       }
 }
