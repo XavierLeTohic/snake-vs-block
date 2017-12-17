@@ -130,8 +130,6 @@ export class Core {
 
         const blockRadius = BLOCK_RADIUS * scale
 
-        context.fillStyle = 'black'
-        context.fillRect(x, y, size, size);
         context.strokeStyle = color;
         context.lineJoin = "round";
         context.lineWidth = blockRadius;

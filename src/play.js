@@ -10,17 +10,19 @@ export default class Play {
 
     CIRCLE_RADIUS = 10;
     CIRCLE_DIAMETER = this.CIRCLE_RADIUS * 2
-    BLOCK_MARGIN = 2
+    BLOCK_MARGIN = 1
 
     framesPerSecond = 60;
     lastCoordinateX = 0;
-    
+
+    score = 0
     end = false
     blocked = false
     circles = []
     cols = []
     points = []
     blocks = []
+    hitBlock = null
 
     availableCircle = {
         x: 0,
@@ -32,70 +34,102 @@ export default class Play {
 
         drawRect(0, 0, canvas.width, canvas.height, 'black')
 
-        for(const block of this.blocks) {
-            drawBlock(block.x, block.y, block.size, block.color)
+        for (const block of this.blocks) {
 
-            drawText(
-                block.x + (block.size / 2) - 10, 
-                block.y + (block.size / 2) + 10,
-                22 * scale, 
-                'white', 
-                'Montserrat-Regular', 
-                block.value
-            )
+            if(block.value > 0) {
+                drawBlock(block.x, block.y, block.size, block.color)
+
+                drawText(
+                    block.x + (block.size / 2) - (this.value > 9 ? 20 : 12),
+                    block.y + (block.size / 2) + 15,
+                    22 * scale,
+                    'white',
+                    'Montserrat-Regular',
+                    block.value
+                )
+            }
+
         }
 
         // Falling points
-        for(var i = 0; i < this.points.length; i++) {
+        for (const point of this.points) {
+
             drawCircle(
-                this.points[i].x, 
-                this.points[i].y,
-                this.CIRCLE_RADIUS * scale, 
+                point.x,
+                point.y,
+                this.CIRCLE_RADIUS * scale,
                 `rgb(255, 204, 0)`
-            );
+            )
+
             drawText(
-                this.points[i].x - 8, 
-                this.points[i].y - 30,
-                 14 * scale, 
-                 'white', 
-                 'Montserrat-Regular', 
-                 this.points[i].value)
+                point.x - 8,
+                point.y - 30,
+                14 * scale,
+                'white',
+                'Montserrat-Regular',
+                point.value
+            )
         }
 
-        // Current player available points
-        drawText(
-            this.availableCircle.x, 
-            this.availableCircle.y,
-             14 * scale, 
-             'white', 
-             'Montserrat-Regular', 
-             this.availableCircle.value)
+        if (this.end === true) {
 
-        // Current player available points line
-        for(var i = 0; i < this.circles.length; i++) {
-            drawCircle(
-                this.circles[i].x, 
-                this.circles[i].y,
-                this.CIRCLE_RADIUS * scale, 
-                `rgb(255, 204, 0)`
-            );
+            // Game score white block
+            drawBlock(
+                halfCanvasWidth / 2,
+                halfCanvasHeight / 4,
+                halfCanvasWidth,
+                'white'
+            )
+
+            // Score
+            drawText(
+                halfCanvasWidth - (this.score > 9 ? 40 : 20),
+                halfCanvasHeight / 2,
+                38 * scale,
+                'black',
+                'Montserrat-Regular',
+                this.score
+            )
+
+
+        } else {
+
+            // Current player available points
+            drawText(
+                this.availableCircle.x,
+                this.availableCircle.y,
+                14 * scale,
+                'white',
+                'Montserrat-Regular',
+                this.availableCircle.value
+            )
+
+            // Current player available points line
+            for (const circle of this.circles) {
+                drawCircle(
+                    circle.x,
+                    circle.y,
+                    this.CIRCLE_RADIUS * scale,
+                    `rgb(255, 204, 0)`
+                )
+            }
         }
     }
 
     addBlocks() {
 
-        if(this.blocked) {
+        if (this.blocked || this.end) {
             return false
         }
 
-        const margin = ( this.BLOCK_MARGIN * scale )
+        const margin = (this.BLOCK_MARGIN * scale)
         const blockSize = (canvas.width / 5)
 
-        for(let i = 0; i < 5; i++) {
+        for (let i = 0; i < 5; i++) {
 
             let x;
 
-            if(i === 0) {
+            if (i === 0) {
                 x = margin
             } else {
                 x = margin + (blockSize * i)
@@ -105,7 +139,7 @@ export default class Play {
                 x: x,
                 y: -(blockSize),
                 size: blockSize - (margin * 2),
-                value: Math.floor(Math.random() * this.availableCircle.value - 1) + 1,
+                value: Math.floor(Math.random() * (this.availableCircle.value * 2)) + 1,
                 color: randomColor()
             })
         }
@@ -114,90 +148,121 @@ export default class Play {
 
     updateBlocks() {
 
-        this.blocks = this.blocks.reduce((previous, block) => {
+        if(this.end) {
+            return false
+        }
 
-            // Remove the block from the array when outside of canvas
-            if(block.y > canvas.height) {
-                return previous
-            }
+        // First check for collision
+        for (const block of this.blocks) {
 
             const blockBottomPosition = block.y + block.size
             const blockMargin = this.BLOCK_MARGIN * scale
             const playerX = this.circles[0].x;
+            const playerY = this.circles[0].y;
 
-            // Colision
-            if(blockBottomPosition >= (this.circles[0].y - (this.CIRCLE_DIAMETER + 1)) 
-            && blockBottomPosition <= (this.circles[0].y + this.CIRCLE_DIAMETER))
-            {
-                if(playerX >= (block.x - blockMargin) || playerX <= ((blockMargin - block.x) + (block.size + blockMargin))) {
-                    this.blocked = true
-                    return previous.concat([block])
-                } else {
-                    return previous.concat([block])
+            if (blockBottomPosition >= (playerY - (this.CIRCLE_DIAMETER + 1))
+                && blockBottomPosition <= (playerY + this.CIRCLE_DIAMETER)
+            ) {
+                // Collision X
+                if (playerX >= (block.x - blockMargin)
+                    && playerX <= ((block.x - blockMargin) + (block.size + blockMargin))
+                ) {
+
+                    if (block.value > 0) {
+                        this.blocked = true
+                        this.hitBlock = block
+                    } else {
+                        this.blocked = false
+                        this.hitBlock = null
+                    }
+
                 }
             }
+        }
 
-            if(!this.blocked) {
-                
-                let { y , ...props } = block
+        // Update blocks position and handle blocks to remove
+        if (!this.blocked) {
+
+            this.blocks = this.blocks.reduce((previous, block, key) => {
+
+                // Remove the block from the array when outside of canvas
+                if (block.y > canvas.height) {
+                    return previous;
+                }
+
+                // Remove the block from the array if value is 0
+                if (block.value === 0) {
+                    return previous
+                }
+
+                let { y, ...props } = block
 
                 return previous.concat([{
                     y: y += 10,
                     ...props
                 }])
-            } else {
-                return previous.concat([block])
-            }
 
-        }, []);
+            }, []);
+        }
+    }
+
+    // Called every 500ms when player was colliding with a block
+    handleBlockCollision() {
+        if (this.hitBlock !== null && this.hitBlock.value > 0 && this.availableCircle.value > 0) {
+            this.hitBlock.value -= 1
+            this.availableCircle.value -= 1
+            this.circles.pop()
+        }
     }
 
     addPoints() {
 
-        if(this.blocked) {
+        if (this.blocked || this.end) {
             return false
         }
 
-        const numberOfPoints = Math.floor(Math.random() * 4) + 1
+        const numberOfPoints = Math.floor(Math.random() * 3) + 1
 
-        for(var i = 0; i < numberOfPoints; i++) {
+        for (var i = 0; i < numberOfPoints; i++) {
             this.points.push({
                 x: this.cols[i],
                 y: - 40,
-                value:  Math.floor(Math.random() * 5) + 1
+                value: Math.floor(Math.random() * 5) + 1
             })
         }
     }
 
     updatePoints() {
 
-        if(this.blocked) {
+        if (this.blocked || this.end) {
             return false
         }
 
         this.points = this.points.reduce((previous, point) => {
 
             // Check if the points y position are upper than canvas height
-            if(point.y < (halfCanvasHeight * 2)) {
+            if (point.y < (halfCanvasHeight * 2)) {
 
-                // Collision
-                if(point.y > (this.availableCircle.y - 10) && point.y < this.availableCircle.y + 40
+                // Collision with points
+                if (point.y > (this.availableCircle.y - 10) && point.y < this.availableCircle.y + 40
                     && point.x > (this.availableCircle.x - 10) && point.x < this.availableCircle.x + 40
                 ) {
-            
-                    if(this.circles.length < 10) {
+
+                    // Adding points as circles on the screen
+                    for (let i = 0; i < point.value; i++) {
                         this.circles.push({
                             x: this.circles[this.circles.length - 1].x,
                             y: this.circles[this.circles.length - 1].y + 40
                         })
                     }
-    
+
                     this.availableCircle.value += point.value;
-    
+                    this.score += point.value;
+
                     return previous
                 } else {
 
-                    if(!this.blocked) {
+                    if (!this.blocked) {
 
                         let { y, ...props } = point;
 
@@ -205,7 +270,7 @@ export default class Play {
                             y: y + 10,
                             ...props
                         }])
-                    } 
+                    }
                     return previous
                 }
             }
@@ -219,32 +284,39 @@ export default class Play {
     startGame() {
 
         const oneColWith = halfCanvasWidth / 2;
-
-        this.cols = [
-            oneColWith / 2,
-            halfCanvasWidth,
-            halfCanvasWidth + oneColWith,
-            canvas.width - 50
-        ];
+        
+        for(let i = 1; i <= 5; i++) {
+            this.cols.push(oneColWith * i)
+        }
 
         canvas.addEventListener("touchmove", this.handleTouch, false);
 
         this._play_animation = setInterval(() => {
-            this.updateBlocks()
-            this.updatePoints()
-            this.draw()
+
+            if (this.availableCircle.value > 0) {
+                this.updateBlocks()
+                this.updatePoints()
+                this.draw()
+            } else {
+                this.end = true
+                this.draw()
+            }
+
         }, 1000 / this.framesPerSecond)
 
-        setTimeout(() => {
-            this.addPoints()
-            setInterval(() => {
-                this.addPoints()
-            }, 1500)
-            setInterval(() => {
-                this.addBlocks()
-            }, 2000)
-        }, 1000)
+        this.addPoints()
 
+        setInterval(() => {
+            this.addPoints()
+        }, 1000)
+        setInterval(() => {
+            this.addBlocks()
+        }, 2500)
+        setInterval(() => {
+            if (this.blocked) {
+                this.handleBlockCollision()
+            }
+        }, 100)
     }
 
     /**
@@ -253,8 +325,12 @@ export default class Play {
     handleTouch = async ({ changedTouches }) => {
         const touch = changedTouches[0];
 
+        if(this.end) {
+            return false;
+        }
+
         // First touch
-        if(this.lastCoordinateX === 0) {
+        if (this.lastCoordinateX === 0) {
             this.lastCoordinateX = touch.pageX
             return false
         }
@@ -263,9 +339,9 @@ export default class Play {
         const distance = Math.abs(this.lastCoordinateX - touch.pageX) * scale
 
         // Swipe left
-        if(this.lastCoordinateX > touch.pageX) {
+        if (this.lastCoordinateX > touch.pageX) {
 
-            if(this.circles[0].x - distance < this.CIRCLE_RADIUS) {
+            if (this.circles[0].x - distance < this.CIRCLE_RADIUS) {
                 return false
             }
 
@@ -273,14 +349,14 @@ export default class Play {
             this.circles[0].x -= distance
 
             this.circles.map((circle, key) => {
-                if(key !== 0) {
+                if (key !== 0) {
                     circle.x -= distance
                 }
             })
         } else {
             // Swipe right
 
-            if(this.circles[0].x + distance > ((window.innerWidth * scale) - this.CIRCLE_RADIUS)) {
+            if (this.circles[0].x + distance > ((window.innerWidth * scale) - this.CIRCLE_RADIUS)) {
                 return false
             }
 
@@ -288,7 +364,7 @@ export default class Play {
             this.circles[0].x += distance
 
             this.circles.map((circle, key) => {
-                if(key !== 0) {
+                if (key !== 0) {
                     circle.x += distance
                 }
             })
@@ -308,12 +384,12 @@ export default class Play {
 
             this._start_animation = setInterval(() => {
 
-                if(this.circles[0].y > (startYPosition - (50*scale))) {
+                if (this.circles[0].y > (startYPosition - (50 * scale))) {
 
-                    this.availableCircle.y -= (6*scale)
+                    this.availableCircle.y -= (6 * scale)
 
                     this.circles.map((circle, key) => {
-                        circle.y -= (5*scale) - ((2*scale) * key)
+                        circle.y -= (5 * scale) - ((2 * scale) * key)
                     })
 
                     this.draw()
@@ -330,13 +406,13 @@ export default class Play {
      */
     async run() {
 
-        this.availableCircle.x = halfCanvasWidth - (3*scale);
+        this.availableCircle.x = halfCanvasWidth - (3 * scale);
         this.availableCircle.y = (halfCanvasHeight + (canvas.height / 6)) - 20;
 
         const defaultX = halfCanvasWidth;
         const defaultY = halfCanvasHeight + (canvas.height / 6);
 
-        for(let i = 0; i < this.availableCircle.value; i++) {
+        for (let i = 0; i < this.availableCircle.value; i++) {
             this.circles.push({ x: defaultX, y: defaultY })
         }
 
