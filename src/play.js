@@ -17,6 +17,8 @@ export default class Play {
 
     score = 0
     end = false
+    newBestScore = false
+    bestScore = 0
     blocked = false
     circles = []
     cols = []
@@ -83,13 +85,45 @@ export default class Play {
 
             // Score
             drawText(
-                halfCanvasWidth - (this.score > 9 ? 40 : 20),
+                halfCanvasWidth - (this.score > 9 ? 60 : 30),
                 halfCanvasHeight / 2,
-                38 * scale,
+                45 * scale,
                 'black',
                 'Montserrat-Regular',
                 this.score
             )
+
+            if(this.newBestScore) {
+                // New best score label
+                drawText(
+                    halfCanvasWidth - 110,
+                    halfCanvasHeight - 140,
+                    14 * scale,
+                    'black',
+                    'Montserrat-Thin',
+                    `New best score !`
+                )
+            } else {
+                // New best score label
+                drawText(
+                    halfCanvasWidth - 70,
+                    halfCanvasHeight - 140,
+                    14 * scale,
+                    'black',
+                    'Montserrat-Thin',
+                    `Best score :`
+                )
+
+                // Best score
+                drawText(
+                    halfCanvasWidth - 20,
+                    halfCanvasHeight - 80,
+                    22 * scale,
+                    'black',
+                    'Montserrat-Regular',
+                    this.bestScore
+                )
+            }
 
 
         } else {
@@ -137,7 +171,7 @@ export default class Play {
 
             this.blocks.push({
                 x: x,
-                y: -(blockSize),
+                y: -(blockSize * 3),
                 size: blockSize - (margin * 2),
                 value: Math.floor(Math.random() * (this.availableCircle.value * 2)) + 1,
                 color: randomColor()
@@ -211,7 +245,20 @@ export default class Play {
         if (this.hitBlock !== null && this.hitBlock.value > 0 && this.availableCircle.value > 0) {
             this.hitBlock.value -= 1
             this.availableCircle.value -= 1
+
+            if(this.availableCircle.value === 0) {
+                this.end = true
+                if(this.score > this.bestScore) {
+                    this.newBestScore = true
+                    this.bestScore = this.score
+                    localStorage.setItem('bestScore', this.score)
+                }
+                console.log(this.bestScore)
+
+            }
+
             this.circles.pop()
+  
         }
     }
 
@@ -298,7 +345,6 @@ export default class Play {
                 this.updatePoints()
                 this.draw()
             } else {
-                this.end = true
                 this.draw()
             }
 
@@ -308,10 +354,8 @@ export default class Play {
 
         setInterval(() => {
             this.addPoints()
-        }, 1000)
-        setInterval(() => {
             this.addBlocks()
-        }, 2500)
+        }, 1500)
         setInterval(() => {
             if (this.blocked) {
                 this.handleBlockCollision()
@@ -415,6 +459,13 @@ export default class Play {
         for (let i = 0; i < this.availableCircle.value; i++) {
             this.circles.push({ x: defaultX, y: defaultY })
         }
+
+        if(localStorage.key('bestScore') !== null) {
+            this.bestScore = parseInt(localStorage.getItem('bestScore'));
+        } else {
+            this.bestScore = 0;
+        }
+        
 
         this.draw()
 
