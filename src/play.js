@@ -1,5 +1,4 @@
 "use strict"
-import randomColor from 'randomcolor'
 import { canvas, Core, halfCanvasHeight, halfCanvasWidth, scale } from './core'
 const { drawRect, drawImage, drawText, drawCircle, drawNet, sleep, drawBlock } = Core;
 
@@ -48,7 +47,7 @@ export default class Play {
                     block.x + (block.size / 2) - (this.value > 9 ? (10 * scale) : (6 * scale)),
                     block.y + (block.size / 2) + (7 * scale),
                     22 * scale,
-                    'white',
+                    'black',
                     'Montserrat-Regular',
                     block.value
                 )
@@ -98,7 +97,7 @@ export default class Play {
             if(this.newBestScore) {
                 // New best score label
                 drawText(
-                    halfCanvasWidth - (halfCanvasWidth / 3),
+                    halfCanvasWidth - (halfCanvasWidth / 4),
                     (halfCanvasHeight / 2) + (halfCanvasHeight / 8),
                     14 * scale,
                     'black',
@@ -162,6 +161,27 @@ export default class Play {
         }
     }
 
+    getBlockColor(blockValue) {
+
+        const currentPoints = this.availableCircle.value;
+
+        if(blockValue === 1) {
+            return '#69F0AE'
+        } else if(blockValue <= 4) {
+            return '#00E676'
+        } else if(blockValue <= 8) {
+            return '#00C853'
+        } else if (blockValue <= 12) {
+            return '#FFD54F'
+        } else if(blockValue <= 16) {
+            return '#FFCA28'
+        } else if(blockValue <= 20) {
+            return '#FF8F00'
+        } else if(blockValue >= 21) {
+            return '#D84315'
+        }
+    }
+
     addBlocks() {
 
         if (this.blocked || this.end || this.pause) {
@@ -181,12 +201,14 @@ export default class Play {
                 x = margin + (blockSize * i)
             }
 
+            const value = Math.floor(Math.random() * (this.availableCircle.value * 2)) + 1
+
             this.blocks.push({
                 x: x,
                 y: -(blockSize * 3),
                 size: blockSize - (margin * 2),
-                value: Math.floor(Math.random() * (this.availableCircle.value * 2)) + 1,
-                color: randomColor()
+                value: value,
+                color: this.getBlockColor(value)
             })
         }
 
@@ -256,13 +278,14 @@ export default class Play {
     handleBlockCollision() {
         if (this.hitBlock !== null && this.hitBlock.value > 0 && this.availableCircle.value > 0) {
             this.hitBlock.value -= 1
+            this.hitBlock.color = this.getBlockColor(this.hitBlock.value)
             this.availableCircle.value -= 1
 
             if(this.availableCircle.value === 0 && !this.end) {
                 canvas.removeEventListener("touchmove", this.handleTouch);
                 this.end = true
 
-                if(this.score > this.bestScore) {
+                if(this.bestScore === 0 || this.score > this.bestScore) {
                     this.newBestScore = true
                     this.bestScore = this.score
                     localStorage.setItem('bestScore', this.score)
@@ -519,6 +542,7 @@ export default class Play {
         this.blocked = false;
         this.hitBlock = null;
         this.end = false;
+        this.lastCoordinateX = 0
 
         const defaultX = halfCanvasWidth;
         const defaultY = halfCanvasHeight + (canvas.height / 6);
