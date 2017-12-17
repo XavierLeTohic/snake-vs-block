@@ -32,16 +32,16 @@ export default class Game extends Core {
 
     async init() {
 
-        // // Display the boot state
-        // this.boot.display()
-        // // During the boot state preload assets
-        // await preload()
-        // // Sleep until the visibility duration of the boot state
-        // await sleep(this.boot.VISIBILITY_DURATION)
-        // // Hide the boot state
-        // this.boot.hide()
-        // // Wait the end of the animation
-        // await sleep(this.boot.HIDE_ANIMATION_DURATION)
+        // Display the boot state
+        this.boot.display()
+        // During the boot state preload assets
+        await preload()
+        // Sleep until the visibility duration of the boot state
+        await sleep(this.boot.VISIBILITY_DURATION)
+        // Hide the boot state
+        this.boot.hide()
+        // Wait the end of the animation
+        await sleep(this.boot.HIDE_ANIMATION_DURATION)
         // Show the start menu
         this.start.show(this.play.run.bind(this.play))
     }

@@ -232,7 +232,7 @@ export default class Play {
                 let { y, ...props } = block
 
                 return previous.concat([{
-                    y: y += 10,
+                    y: y += 13,
                     ...props
                 }])
 
@@ -314,7 +314,7 @@ export default class Play {
                         let { y, ...props } = point;
 
                         return previous.concat([{
-                            y: y + 10,
+                            y: y + 13,
                             ...props
                         }])
                     }
@@ -392,7 +392,8 @@ export default class Play {
             this.availableCircle.x -= distance
             this.circles[0].x -= distance
 
-            this.circles.map((circle, key) => {
+            this.circles.map(async (circle, key) => {
+                await sleep(70 * key)
                 if (key !== 0) {
                     circle.x -= distance
                 }
@@ -407,7 +408,8 @@ export default class Play {
             this.availableCircle.x += distance
             this.circles[0].x += distance
 
-            this.circles.map((circle, key) => {
+            this.circles.map(async (circle, key) => {
+                await sleep(70 * key)
                 if (key !== 0) {
                     circle.x += distance
                 }
