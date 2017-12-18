@@ -12,6 +12,13 @@ export default class Play {
     BLOCK_MARGIN = 1
 
     framesPerSecond = 60;
+    startAnimationEnded = false;
+    lastAddedTime = 0;
+    lastBlockCollisionTime = 0;
+    restartLabelTime = 0;
+    restart = false;
+
+    listenersApplied = false;
     lastCoordinateX = 0;
     distanceToX = 0;
     swipeDirection = '';
@@ -279,7 +286,7 @@ export default class Play {
     async updateCircles() {
 
         // Value was not set yet
-        if(this.lastCoordinateX === 0) {
+        if(this.lastCoordinateX === 0 || this.circles.length === 0) {
             return false;
         }
 
@@ -308,7 +315,9 @@ export default class Play {
         }
     }
 
-    // Called every 500ms when player was colliding with a block
+    /**
+     * Called every 500ms when player was colliding with a block
+     */
     handleBlockCollision() {
         if (this.hitBlock !== null && this.hitBlock.value > 0 && this.availableCircle.value > 0) {
             this.hitBlock.value -= 1
@@ -316,8 +325,10 @@ export default class Play {
             this.availableCircle.value -= 1
 
             if(this.availableCircle.value === 0 && !this.end) {
-                canvas.removeEventListener("touchmove", this.handleTouch);
                 this.end = true
+                window.cancelAnimationFrame(this.play_animation)
+                canvas.removeEventListener("touchmove", this.onTouch);
+                canvas.addEventListener("touchstart", this.onTouch);
 
                 if(this.bestScore === 0 || this.score > this.bestScore) {
                     this.newBestScore = true
@@ -325,8 +336,7 @@ export default class Play {
                     localStorage.setItem('bestScore', this.score)
                 }
 
-                this._restart_animation = setInterval(this.restartAnimation, 20);
-                canvas.addEventListener("touchstart", this.handleTouch)
+                window.requestAnimationFrame(this.restartLabelAnimation)
             }
 
             this.circles.pop()
@@ -334,6 +344,9 @@ export default class Play {
         }
     }
 
+    /**
+     * Add points on hidden the top of the canvas
+     */
     addPoints() {
 
         if (this.blocked || this.end || this.pause) {
@@ -351,6 +364,10 @@ export default class Play {
         }
     }
 
+    /**
+     * Update points y position and remove points with 
+     * y position upper than canvas height
+     */
     updatePoints() {
 
         if (this.blocked || this.end || this.pause) {
@@ -399,6 +416,9 @@ export default class Play {
         }, [])
     }
 
+    /**
+     * When user leave the tab pause the game
+     */
     onTabFocusOff = () => {
         if(document.visibilityState === 'hidden') {
             this.pause = true;
@@ -410,20 +430,15 @@ export default class Play {
     /**
      * When user swipe on the screen during the game
      */
-    handleTouch = async ({ changedTouches }) => {
+    onTouch = async ({ changedTouches }) => {
         const touch = changedTouches[0];
 
+        // Called when the game was ended and touch the screen
         if(this.end) {
-
             // Remove all listeners and interval before showing the start screen
-            clearInterval(this._restart_animation);
-            clearInterval(this._play_animation);
-            clearInterval(this._start_animation);
-            clearInterval(this._add_elements_animation);
-            clearInterval(this._block_collision_animation);
-            canvas.removeEventListener("touchstart", this.handleTouch)
+            this.restart = true
+            canvas.removeEventListener("touchstart", this.onTouch)
             document.removeEventListener("visibilitychange", this.onTabFocusOff)
-
             return this.showStartScreen(this.run.bind(this))
         }
 
@@ -438,90 +453,108 @@ export default class Play {
         this.lastCoordinateX = touch.pageX
     }
 
-    restartAnimation = () => {
-            
-        const opacity = parseFloat(this.restartOpacity.toFixed(2));
+    applyListeners() {
+        this.listenersApplied = true;
+        canvas.addEventListener("touchmove", this.onTouch, false);
+        document.addEventListener("visibilitychange", this.onTabFocusOff);
+    }
 
-        if(opacity <= 1 && !this.reverseOpacity) {
-            this.restartOpacity += 0.04
-            if(opacity === 1) {
-                this.reverseOpacity = !this.reverseOpacity
+    restartLabelAnimation = (timestamp) => {
+
+        if(!this.end || this.restart) {
+            return false
+        }
+
+        if(!this.restartLabelTime || this.restartLabelTime - this.restartLabelTime <= 100) {
+            this.restartLabelTime = timestamp;
+
+            const opacity = parseFloat(this.restartOpacity.toFixed(2));
+
+            if(opacity <= 1 && !this.reverseOpacity) {
+                this.restartOpacity += 0.04
+                if(opacity === 1) {
+                    this.reverseOpacity = !this.reverseOpacity
+                }
+            } else if(opacity >= 0 && this.reverseOpacity) {
+                this.restartOpacity -= 0.04
+                if(opacity === 0) {
+                    this.reverseOpacity = !this.reverseOpacity
+                }
             }
-        } else if(opacity >= 0 && this.reverseOpacity) {
-            this.restartOpacity -= 0.04
-            if(opacity === 0) {
-                this.reverseOpacity = !this.reverseOpacity
-            }
+
+            this.draw()
+            window.requestAnimationFrame(this.restartLabelAnimation)
         }
     }
 
     /**
-     * Deploying first coins animation
+     * Animation of circles before be able to play
      */
-    async startAnimation() {
-        return new Promise((resolve, reject) => {
+    beforePlayAnimation = () => {
 
-            const startYPosition = halfCanvasHeight + (canvas.height / 6);
+        const startYPosition = halfCanvasHeight + (canvas.height / 6);
 
-            this._start_animation = setInterval(() => {
+        if (this.circles[0].y > (startYPosition - (50 * scale))) {
 
-                if (this.circles[0].y > (startYPosition - (50 * scale))) {
+            this.availableCircle.y -= (6 * scale)
+            this.circles.map((circle, key) => {
+                circle.y -= (5 * scale) - ((2 * scale) * key)
+            })
 
-                    this.availableCircle.y -= (6 * scale)
+            this.draw()
 
-                    this.circles.map((circle, key) => {
-                        circle.y -= (5 * scale) - ((2 * scale) * key)
-                    })
-
-                    this.draw()
-                } else {
-                    clearInterval(this._start_animation);
-                    resolve();
-                }
-            }, 1000 / this.framesPerSecond)
-        })
+            window.requestAnimationFrame(this.beforePlayAnimation)
+        } else {
+            this.startAnimationEnded = true
+            this.applyListeners()
+            window.cancelAnimationFrame(this.before_play_animation)
+        }
     }
 
-        /**
-     * Called after the start animation
+    /**
+     * Animation during the game session
+     * @param {number} timestamp 
      */
-    startGame() {
+    playAnimation = (timestamp) => {
 
-        const oneColWith = halfCanvasWidth / 2;
-        
-        for(let i = 1; i <= 5; i++) {
-            this.cols.push(oneColWith * i)
+        if(this.startAnimationEnded === false) {
+            return window.requestAnimationFrame(this.playAnimation)
         }
 
-        canvas.addEventListener("touchmove", this.handleTouch, false);
-        document.addEventListener("visibilitychange", this.onTabFocusOff);
+        if (!this.end && !this.pause) {
 
-        this._play_animation = setInterval(() => {
-
-            if (this.availableCircle.value > 0) {
-                this.updateCircles()
-                this.updateBlocks()
-                this.updatePoints()
-                this.draw()
+            if(!this.lastAddedTime && ! this.lastBlockCollisionTime) {
+                this.lastAddedTime = this.lastBlockCollisionTime =  timestamp
+                this.addPoints();
+                this.addBlocks();
             } else {
-                this.draw()
+
+                if(timestamp - this.lastAddedTime >= 1500) {
+                    // Each 1,5s add points and blocks
+                    this.addPoints();
+                    this.addBlocks();
+                    this.lastAddedTime = timestamp;
+    
+                } else if(timestamp - this.lastBlockCollisionTime >= 100) {
+                    // Each 100ms handle block collision
+                    if(this.blocked) {
+                       this.handleBlockCollision() 
+                    }
+                    this.lastBlockCollisionTime = timestamp
+                }
             }
 
-        }, 1000 / this.framesPerSecond)
+            this.updateCircles()
+            this.updateBlocks()
+            this.updatePoints()
+            this.draw()
 
-        this.addPoints()
-
-        this._add_elements_animation = setInterval(() => {
-            this.addPoints()
-            this.addBlocks()
-        }, 1500)
-
-        this._block_collision_animation = setInterval(() => {
-            if (this.blocked) {
-                this.handleBlockCollision()
-            }
-        }, 100)
+            window.requestAnimationFrame(this.playAnimation)
+        } else {
+            this.draw()
+        }
     }
+
 
     /**
      * Run the game
@@ -531,23 +564,29 @@ export default class Play {
         this.showStartScreen = showStartScreen
 
         // Reset values
-        this.availableCircle.x = halfCanvasWidth - (3 * scale);
-        this.availableCircle.y = (halfCanvasHeight + (canvas.height / 6)) - 20;
-        this.availableCircle.value = 4;
-        this.restartOpacity = 0;
-        this.reverseOpacity = false;
-        this.blocks = [];
-        this.points = [];
-        this.circles = [];
-        this.cols = [];
-        this.pause = false;
-        this.blocked = false;
-        this.hitBlock = null;
-        this.end = false;
+        this.startAnimationEnded = false
+        this.listenersApplied = false
+        this.lastAddedTime = 0
+        this.lastBlockCollisionTime = 0
+        this.restartLabelTime = 0
+        this.restart = false;
+        this.availableCircle.x = halfCanvasWidth - (3 * scale)
+        this.availableCircle.y = (halfCanvasHeight + (canvas.height / 6)) - 20
+        this.availableCircle.value = 4
+        this.restartOpacity = 0
+        this.reverseOpacity = false
+        this.blocks = []
+        this.points = []
+        this.circles = []
+        this.cols = []
+        this.pause = false
+        this.blocked = false
+        this.hitBlock = null
+        this.end = false
         this.lastCoordinateX = 0
 
-        const defaultX = halfCanvasWidth;
-        const defaultY = halfCanvasHeight + (canvas.height / 6);
+        const defaultX = halfCanvasWidth
+        const defaultY = halfCanvasHeight + (canvas.height / 6)
 
         for (let i = 0; i < this.availableCircle.value; i++) {
             this.circles.push({ x: defaultX, y: defaultY })
@@ -559,8 +598,16 @@ export default class Play {
             this.bestScore = 0;
         }
 
+        // Initialization of columns for points position
+        const oneColWith = halfCanvasWidth / 2;
+        for(let i = 1; i <= 5; i++) {
+            this.cols.push(oneColWith * i)
+        }
+
+        // Draw the circle of the start screen
         this.draw()
-        await this.startAnimation()
-        this.startGame()
+
+        this.before_play_animation = window.requestAnimationFrame(this.beforePlayAnimation)
+        this.play_animation = window.requestAnimationFrame(this.playAnimation)
     }
 }

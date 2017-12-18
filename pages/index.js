@@ -8,6 +8,21 @@ export default class extends Component {
     componentDidMount() {
         // Client-side
         if(typeof window !== 'undefined') {
+
+            window.requestAnimFrame = window.requestAnimationFrame 
+                || window.webkitRequestAnimationFrame 
+                || window.mozRequestAnimationFrame 
+                || window.oRequestAnimationFrame 
+                || window.msRequestAnimationFrame 
+                || function(requestID) {
+                    window.setTimeout(requestID, 1000 / 60);
+                };
+
+            window.cancelAnimationFrame = window.cancelAnimationFrame
+                || window.mozCancelAnimationFrame
+                || function(requestID){clearTimeout(requestID)};
+                 
+            
             const game = new Game(this.canvas)
         }
     }
