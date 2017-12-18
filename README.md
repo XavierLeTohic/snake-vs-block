@@ -1,4 +1,4 @@
-Simple Pong game made with HTML5 Canvas ([Try online !](https://html5-pong.now.sh))
+A HTML5 canvas game based on Snake VS Block mobile game ([Try (on mobile only)](https://snake-vs-block.now.sh))
 =====================
 
 # Setup
@@ -16,15 +16,3 @@ npm run dev
 ```bash
 npm run build && npm run start
 ```
-
-# Features
-- [x] Insctruction page
-- [x] Ball animation
-- [x] Control the paddles when mouse over the canvas
-- [x] Ball collisions with paddles
-- [x] Ball reset when user win or lose
-- [x] Pause game when resize page
-- [x] Implement IA
-- [x] Display scores
-- [ ] Better collisions with paddles
-- [ ] Comments
