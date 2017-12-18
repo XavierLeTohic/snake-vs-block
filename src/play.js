@@ -54,7 +54,7 @@ export default class Play {
                 drawBlock(block.x, block.y, block.size, block.color)
 
                 drawText(
-                    block.x + (block.size / 2) - (this.value > 9 ? (10 * scale) : (6 * scale)),
+                    block.x + ((block.size / 2) - (block.value > 9 ? (10 * scale) : (6 * scale))),
                     block.y + (block.size / 2) + (7 * scale),
                     22 * scale,
                     'black',
