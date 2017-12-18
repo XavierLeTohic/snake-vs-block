@@ -283,18 +283,15 @@ export default class Play {
         }
     }
 
-    async updateCircles() {
+    updateCircles() {
 
         // Value was not set yet
         if(this.lastCoordinateX === 0 || this.circles.length === 0) {
             return false;
         }
 
-        // Update the first circle x position and current score value
-        if(this.lastCoordinateX >= this.CIRCLE_RADIUS && this.lastCoordinateX <= canvas.width - this.CIRCLE_RADIUS) {
-            this.circles[0].x = this.lastCoordinateX
-            this.availableCircle.x = this.lastCoordinateX - 10
-        }
+        this.circles[0].x = this.lastCoordinateX
+        this.availableCircle.x = this.lastCoordinateX - 10
 
         for(var i = 1; i < this.circles.length; i++) {
             const circle = this.circles[i],
@@ -444,13 +441,13 @@ export default class Play {
 
         // First touch
         if (this.lastCoordinateX === 0) {
-            this.lastCoordinateX = touch.pageX
+            this.lastCoordinateX = Math.abs(halfCanvasWidth - touch.pageX) * scale
             return false
         }
 
         this.distanceToX = Math.abs(this.lastCoordinateX - touch.pageX) * scale
         this.swipeDirection = (this.lastCoordinateX > touch.pageX ? 'left' : 'right');
-        this.lastCoordinateX = touch.pageX
+        this.lastCoordinateX = touch.pageX * scale
     }
 
     applyListeners() {
