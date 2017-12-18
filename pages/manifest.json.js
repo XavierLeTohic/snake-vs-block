@@ -14,7 +14,7 @@ export default class extends React.Component {
                 }
             ],
             "start_url": "/dist/index.html",
-            "display": "standalone",
+            "display": "fullscreen",
             "orientation": "portrait"
         }
     `)

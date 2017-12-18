@@ -290,8 +290,10 @@ export default class Play {
             return false;
         }
 
-        this.circles[0].x = this.lastCoordinateX
-        this.availableCircle.x = this.lastCoordinateX - 10
+        if(this.lastCoordinateX >= 0 + this.CIRCLE_RADIUS && this.lastCoordinateX <= canvas.width - this.CIRCLE_RADIUS) {
+            this.circles[0].x = this.lastCoordinateX
+            this.availableCircle.x = this.lastCoordinateX - 10
+        }
 
         for(var i = 1; i < this.circles.length; i++) {
             const circle = this.circles[i],
