@@ -13,6 +13,8 @@ export default class Play {
 
     framesPerSecond = 60;
     lastCoordinateX = 0;
+    distanceToX = 0;
+    swipeDirection = '';
 
     score = 0
     end = false
@@ -274,6 +276,38 @@ export default class Play {
         }
     }
 
+    async updateCircles() {
+
+        // Value was not set yet
+        if(this.lastCoordinateX === 0) {
+            return false;
+        }
+
+        // Update the first circle x position and current score value
+        if(this.lastCoordinateX >= this.CIRCLE_RADIUS && this.lastCoordinateX <= canvas.width - this.CIRCLE_RADIUS) {
+            this.circles[0].x = this.lastCoordinateX
+            this.availableCircle.x = this.lastCoordinateX - 10
+        }
+
+        for(var i = 1; i < this.circles.length; i++) {
+            const circle = this.circles[i],
+                prev = this.circles[i - 1],
+                distance = Math.sqrt((circle.x - prev.x) * (circle.x - prev.x)),
+                speed = Math.abs(circle.x - prev.x) / (3 * scale);
+                circle.y = prev.y + (this.CIRCLE_DIAMETER * scale);
+            
+            if(distance < speed) {
+                circle.x = prev.x;
+            }
+            else if(circle.x > prev.x && (circle.x - speed) >= 0) {
+                circle.x -= speed;
+            }
+            else if(circle.x < prev.x && (circle.x - speed) <= canvas.width) {
+                circle.x += speed;
+            }     
+        }
+    }
+
     // Called every 500ms when player was colliding with a block
     handleBlockCollision() {
         if (this.hitBlock !== null && this.hitBlock.value > 0 && this.availableCircle.value > 0) {
@@ -335,9 +369,11 @@ export default class Play {
 
                     // Adding points as circles on the screen
                     for (let i = 0; i < point.value; i++) {
+                        const lastCircle = this.circles[this.circles.length - 1];
+
                         this.circles.push({
-                            x: this.circles[this.circles.length - 1].x,
-                            y: this.circles[this.circles.length - 1].y + (20 * scale)
+                            x: lastCircle.x,
+                            y: lastCircle.y + (20 * scale) 
                         })
                     }
 
@@ -397,43 +433,8 @@ export default class Play {
             return false
         }
 
-        // Check the distance
-        const distance = Math.abs(this.lastCoordinateX - touch.pageX) * scale
-
-        // Swipe left
-        if (this.lastCoordinateX > touch.pageX) {
-
-            if (this.circles[0].x - distance < this.CIRCLE_RADIUS) {
-                return false
-            }
-
-            this.availableCircle.x -= distance
-            this.circles[0].x -= distance
-
-            this.circles.map(async (circle, key) => {
-                await sleep(70 * key)
-                if (key !== 0) {
-                    circle.x -= distance
-                }
-            })
-        } else {
-            // Swipe right
-
-            if (this.circles[0].x + distance > ((window.innerWidth * scale) - this.CIRCLE_RADIUS)) {
-                return false
-            }
-
-            this.availableCircle.x += distance
-            this.circles[0].x += distance
-
-            this.circles.map(async (circle, key) => {
-                await sleep(70 * key)
-                if (key !== 0) {
-                    circle.x += distance
-                }
-            })
-        }
-
+        this.distanceToX = Math.abs(this.lastCoordinateX - touch.pageX) * scale
+        this.swipeDirection = (this.lastCoordinateX > touch.pageX ? 'left' : 'right');
         this.lastCoordinateX = touch.pageX
     }
 
@@ -498,6 +499,7 @@ export default class Play {
         this._play_animation = setInterval(() => {
 
             if (this.availableCircle.value > 0) {
+                this.updateCircles()
                 this.updateBlocks()
                 this.updatePoints()
                 this.draw()
