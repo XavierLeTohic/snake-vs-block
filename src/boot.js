@@ -21,6 +21,7 @@ export default class Boot {
     CIRCLE_RADIUS = 10
 
     framesPerSecond = 60
+    bestScore = 0;
 
     blackBlock = {
         x: 0,
@@ -55,6 +56,11 @@ export default class Boot {
         drawText(0, -200, 1, 'black', 'Montserrat-Thin', 'a')
         drawText(0, -200, 1, 'black', 'Montserrat-Regular', 'a')
 
+
+        if(localStorage.key('bestScore') !== null) {
+            this.bestScore = localStorage.getItem('bestScore')
+        }
+
         this.draw()
         return Promise.resolve()
     }
@@ -63,21 +69,22 @@ export default class Boot {
      * Hide the boot state with animation
      */
     hide() {
+        this.hide_animation = window.requestAnimationFrame(this.hideAnimation)
+    }
 
-        this.animation = setInterval(() => {
-            
-            if(this.blackBlock.x >= -(canvas.width) && this.whiteBlock.x <= canvas.width) {
-                this.blackBlock.x -= 25
-                this.voodooLogo.x -= 25
+    hideAnimation = (timestamp) => {
 
-                this.whiteBlock.x += 25
-                this.bentoLogo.x += 25
-                this.draw()
-            } else {
-                clearInterval(this.animation)
-            }
+        if(this.blackBlock.x >= -(canvas.width) && this.whiteBlock.x <= canvas.width) {
+            this.blackBlock.x -= (25 * scale)
+            this.voodooLogo.x -= (25 * scale)
 
-        }, 1000 / this.framesPerSecond)
+            this.whiteBlock.x += (25 * scale)
+            this.bentoLogo.x += (25 * scale)
+            this.draw()
+            window.requestAnimationFrame(this.hideAnimation)
+        } else {
+            window.cancelAnimationFrame(this.hide_animation)
+        }
     }
 
     draw() {
@@ -140,5 +147,25 @@ export default class Boot {
             this.CIRCLE_RADIUS * scale, 
             `rgb(255, 204, 0)`
         );
+
+        if(this.bestScore > 0) {
+            drawText(
+                halfCanvasWidth - (40 * scale), 
+                halfCanvasHeight - (halfCanvasHeight / 7), 
+                16 * scale, 
+                'white', 
+                'Montserrat-Thin', 
+                'Best score :'
+            )
+
+            drawText(
+                halfCanvasWidth - ((this.bestScore > 9 ? 15 : 10) * scale), 
+                halfCanvasHeight, 
+                this.LIGHT_FONT_SIZE * scale, 
+                'white', 
+                'Montserrat-Regular', 
+                this.bestScore
+            )
+        }
     }
 }

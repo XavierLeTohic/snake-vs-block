@@ -10,6 +10,7 @@ export default class Play {
     CIRCLE_RADIUS = 10;
     CIRCLE_DIAMETER = this.CIRCLE_RADIUS * 2
     BLOCK_MARGIN = 1
+    SPEED = 4.5
 
     framesPerSecond = 60;
     startAnimationEnded = false;
@@ -241,8 +242,8 @@ export default class Play {
                 && blockBottomPosition <= (playerY + this.CIRCLE_DIAMETER)
             ) {
                 // Collision X
-                if (playerX >= (block.x - blockMargin)
-                    && playerX <= ((block.x - blockMargin) + (block.size + blockMargin))
+                if (playerX > (block.x - blockMargin)
+                    && playerX < ((block.x - blockMargin) + (block.size + blockMargin))
                 ) {
 
                     if (block.value > 0) {
@@ -275,7 +276,7 @@ export default class Play {
                 let { y, ...props } = block
 
                 return previous.concat([{
-                    y: y += (6.5 * scale),
+                    y: y += (this.SPEED * scale),
                     ...props
                 }])
 
@@ -404,7 +405,7 @@ export default class Play {
                         let { y, ...props } = point;
 
                         return previous.concat([{
-                            y: y + (6.5 * scale),
+                            y: y + (this.SPEED * scale),
                             ...props
                         }])
                     }
@@ -516,11 +517,11 @@ export default class Play {
      */
     playAnimation = (timestamp) => {
 
-        if(this.startAnimationEnded === false) {
+        if(this.startAnimationEnded === false || this.pause === true) {
             return window.requestAnimationFrame(this.playAnimation)
         }
 
-        if (!this.end && !this.pause) {
+        if (!this.end) {
 
             if(!this.lastAddedTime && ! this.lastBlockCollisionTime) {
                 this.lastAddedTime = this.lastBlockCollisionTime =  timestamp
@@ -528,7 +529,7 @@ export default class Play {
                 this.addBlocks();
             } else {
 
-                if(timestamp - this.lastAddedTime >= 1500) {
+                if(timestamp - this.lastAddedTime >= 2000) {
                     // Each 1,5s add points and blocks
                     this.addPoints();
                     this.addBlocks();
