@@ -360,7 +360,7 @@ export default class Play {
 			const circle = this.circles[i],
 				prev = this.circles[i - 1],
 				distance = Math.sqrt((circle.x - prev.x) * (circle.x - prev.x)),
-				speed = Math.abs(circle.x - prev.x) / (3 * scale);
+				speed = Math.abs(circle.x - prev.x) / (2 * scale);
 				circle.y = prev.y + (this.CIRCLE_DIAMETER * scale);
 			
 			if(distance < speed) {
