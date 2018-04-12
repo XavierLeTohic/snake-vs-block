@@ -150,6 +150,24 @@ export class Core {
     }
 
     /**
+     * @param  {number} xStart
+     * @param  {number} yStart
+     * @param  {number} xEnd
+     * @param  {number} yEnd
+     * @param  {number} lineWidth
+     * @param  {string} color
+     */
+    static drawLine(xStart, yStart, xEnd, yEnd, lineWidth, color) {
+        context.beginPath();
+        context.moveTo(xStart,yStart);
+        context.lineTo(xEnd, yEnd);
+        context.lineWidth = lineWidth;
+        context.strokeStyle = color;
+        context.lineCap="round"
+        context.stroke();
+    }
+
+    /**
      * Using this method to debug and check the center of the canvas
      */
     static drawNet() {

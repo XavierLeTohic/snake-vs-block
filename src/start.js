@@ -59,8 +59,8 @@ export default class Start {
             )
 
             drawText(
-                halfCanvasWidth - ((this.bestScore > 9 ? 15 : 10) * scale), 
-                halfCanvasHeight, 
+                halfCanvasWidth - ((this.bestScore > 9 ? 20 : 10) * scale), 
+                halfCanvasHeight + (10 * scale), 
                 this.LIGHT_FONT_SIZE * scale, 
                 'white', 
                 'Montserrat-Regular', 
