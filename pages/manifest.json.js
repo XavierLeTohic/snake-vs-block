@@ -4,19 +4,22 @@ export default class extends React.Component {
     res.setHeader('Content-Type', 'application/json')
     res.write(`
         {
-            "short_name": "Snake VS Block",
-            "name": "Snake VS Block by Xavier Le Tohic - Voodoo",
+            "name": "Snake-VS-Block",
+            "short_name": "Snake VS Block Xavier Le Tohic",
+            "start_url": "/",
+            "display": "fullscreen",
+            "orientation": "portrait",
+            "background_color": "#000000",
+            "theme_color": "#000000",
             "icons": [
                 {
                     "src": "/static/voodoo.png",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
-            ],
-            "start_url": "/dist/index.html",
-            "display": "fullscreen",
-            "orientation": "portrait"
-        }
+            ]
+          }
+          
     `)
     res.end()
   }
