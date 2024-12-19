@@ -1,4 +1,4 @@
-A HTML5 canvas game based on Snake VS Block mobile game. [Try (on mobile only)](https://snake-vs-block.now.sh)
+A HTML5 canvas game based on Snake VS Block mobile game.
 =====================
 
 # Setup
